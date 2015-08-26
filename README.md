@@ -205,3 +205,10 @@ Assafgordon@gmail.com
 https://github.com/agordon
 
 License: MIT
+
+Additional files:
+
+    Makefile, utils.c, contain.h:
+      copied from <https://github.com/arachsys/containers>
+      Copyright (C) 2013 Chris Webb <chris@arachsys.com>
+      License: MIT
