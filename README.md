@@ -164,6 +164,13 @@ typically this would be combined with busybox/coreutils programs:
         # file /bin/sh
         /bin/sh: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, for GNU/Linux 2.6.24, stripped
 
+### create-static-7za
+
+Same as above, creates a static `7za` binary executable (7z (de)compression program).
+
+        $ ./create-static-7za.sh foo
+
+Installs the static binary in `./foo/bin/7za`.
 
 ### create-host-container
 
