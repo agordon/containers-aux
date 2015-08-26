@@ -1,6 +1,7 @@
 /* list-containers - list information about active containers.
+   part of containers-aux  -  supporting progams for 'containers'
 
-   See: https://github.com/arachsys/containers
+   https://github.com/agordon/container-aux
 
    Copyright (C) Assaf Gordon (assafgordon@gmail.com)
    License: MIT

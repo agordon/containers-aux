@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/container-aux
+
 die()
 {
     B=$(basename "$0")
