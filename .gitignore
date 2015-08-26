@@ -1,0 +1,9 @@
+
+# build with the helper scripts
+coreutils/
+file/
+busybox/
+
+# compiled programs
+*.o
+list-containers
