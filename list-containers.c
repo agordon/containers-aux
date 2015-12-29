@@ -1,7 +1,7 @@
 /* list-containers - list information about active containers.
    part of containers-aux  -  supporting progams for 'containers'
 
-   https://github.com/agordon/container-aux
+   https://github.com/agordon/containers-aux
 
    Copyright (C) Assaf Gordon (assafgordon@gmail.com)
    License: MIT

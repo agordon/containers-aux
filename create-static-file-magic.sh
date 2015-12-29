@@ -3,7 +3,7 @@
 # containers-aux  -  supporting progams for 'containers'
 # Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
 # License: MIT
-# https://github.com/agordon/container-aux
+# https://github.com/agordon/containers-aux
 
 die()
 {
