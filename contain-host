@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/containers-aux
+#
+# This script wraps 'contain' progarm and adds automatic
+# bind-mounting of the host's important directories
+# (e.g. 'bin' and 'lib' directories), resulting in an almost
+# exact copy of the host, except contained.
+#
+# The script passes all parameters to 'contain' itself,
+# this the usage is the same.
+#
+# Example usage:
+#
+#    $ mkdir foo
+#    $ contain-host foo /bin/bash
+#    bash-4.3#
+#
+# The 'bash-4.3' prompt is inside the container, and in it,
+#  /bin, /sbin, /usr/bin, /usr/sbin, /usr/local/bin, /usr/local/sbin, etc.
+# are all mirrored from the host.
+#
+#
+#
+
+# Directories from the host, to bind inside the container
+DIRLIST="/bin
+/sbin
+/lib
+/lib32
+/lib64
+/usr/bin
+/usr/sbin
+/usr/lib
+/usr/lib32
+/usr/lib64
+/usr/libexec
+/usr/share
+/usr/bin
+/usr/sbin
+/usr/local/lib
+/usr/local/lib32
+/usr/local/lib64
+/usr/local/libexec
+/usr/local/share
+"
+
+# create the ephemeral directories (will be auto-populated by 'contain')
+cmd="mkdir -p ./proc ./sys ./dev ;"
+
+# bind-mount the host directories (if they exist on the host)
+for i in $DIRLIST
+do
+    test -d "$i" || continue
+    cmd="$cmd mkdir -p ./$i ; mount --bind '$i' '.$i' ;"
+done
+
+contain -i "$cmd" "$@"

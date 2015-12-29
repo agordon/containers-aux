@@ -172,34 +172,25 @@ Same as above, creates a static `7za` binary executable (7z (de)compression prog
 
 Installs the static binary in `./foo/bin/7za`.
 
-### create-host-container
+### contain-host
 
-**EXPERIMENTAL - USE AT YOUR OWN RISK**
-
-The `create-host-container.sh` script uses bind-mounts to create a replica of
+The `contain-host` script uses bind-mounts to create a replica of
 the host's directory structure. This is an alternative to the `tar + pseudo`
 example shown in the _containers_'s README file.
 
 Typical usage:
 
-    $ sudo ./create-host-container.sh foo
+    $ mkdir foo
+    $ contain-host foo /bin/bash
+    bash-4.3#
 
-    (add this if 'contain' will fails to mount tmpfs)
-    $ sudo chown $USER foo
+The 'bash-4.3' prompt is inside the container, and in it,
+ `/bin`, `/sbin`, `/usr/bin`, `/usr/sbin`, `/usr/local/bin`,
+ `/usr/local/sbin` (including the relevant `*/lib` directories)
+are all mirrored from the host.
 
-    $ contain foo
-    (( inside the container, all host binaries from /bin , /usr/bin are available ))
-
-To umount:
-
-    $ sudo ./unmount-host-container.sh
-
-**NOTE:**
-
-This is HIGHLY experimental. As you are meddling with sudo and the host's system directories,
-terrible things might happen. tread lightly.
-
-
+When the contained process terminates, the bind-mounts are automatically
+unmounted.
 
 
 Contact
