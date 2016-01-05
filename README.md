@@ -57,6 +57,96 @@ PID (458) is the container, can be used with 'inject':
     $ CID=$(list-containers -fb) || exit
     $ inject "$CID" /bin/echo hello world
 
+### create-container-rootfs.sh
+
+The `create-container-rootfs.sh` creates a directory with template a
+root-filesystem that can be used for a quick container setup. The
+directory will contain:
+
+1.  `/bin` - with some binaries copied from the host's `/bin/`,
+    `/usr/bin`, etc. It will include `perl` and `python`.
+	All binaries can be replaced or removed (or added).
+	See also the static coreutils/busybox below.
+
+2.  various `lib` directories (e.g. `/usr/lib`) - created empty,
+    and will be bind-mounted with the container startup helper
+	scripts (see below).
+
+3.  `/etc/` - few files such as `passwd`,`bash.bashrc`,`init.d/rcS`
+    are created to facilitate easier startup inside the container.
+
+4.  `/var` and `/tmp` directories, with world-writable access
+    and sticky-bits turned on.
+
+To customize the container, edit `./etc/init.d/rcS` and add initialization
+code.
+
+### setup-user-mapping.sh
+
+Creates two non-root users on the host: `lxc_root` and `lxc_user`,
+and their corresponding groups. Adds mapping from the given user
+(the operator, you) to these users in `/etc/sub{u,g}id` -
+enabling `contain` to setup user namespace mapping.
+This needs to be run only once, and will work for all later containers.
+Mapping can be use explicitly with `contain`'s `-u`/`-g` options,
+or automatically with the `contain-user-host` helper script.
+
+Example:
+
+    $ who am i
+	gordon
+    $ sudo ./setup-user-mapping.sh gordon
+
+Will enable user `gordon` to later run `contain-user-host` with user mapping
+of `lxc_root` and `lxc_user`.
+
+### contain-* scripts
+
+The scripts starts a container with user namespace mapping and
+bind-mounting host's `lib` directories (based on a previously created
+root-filesystem directory with `create-container-rootfs.sh`).
+
+The scripts are:
+
+1.  `contain-host` - performs host bind-mounting of `lib` directories.
+2.  `contain-user-host` - same as above, adds automatic user namespace
+    mapping of `root` to `lxc_root` and `user` to `lxc_user`. See
+    `setup-user-mapping.sh` script.
+3.  `contain-interactive` - same as above, takes one parameter (the
+    root-filesystem directory) and automatically starts `/bin/bash` as
+	a login shell with the contained root user.
+4.  `contain-background-daemon` - same as #2, takes one parameter (the
+    root-filesystem directory) and automatically starts
+    `/etc/init.d/rcS` as a background process (runs the container with
+    `nohup` and returns immediately)
+
+Examples:
+
+Create a container rootfs directory, start the container as the current
+user (root in the container is the current user, no user-namespace mapping):
+
+    $ ./create-container-rootfs.sh foobar
+	$ ./contain-host ./foobar /bin/sh
+
+Create a container rootfs directory, start the container with user namespace
+mapping (root in the container is the `lxc_root` user on the host, non-root user
+in the container is the `lxc_user` user on the host). `contain` must be installed
+as suid binary (or use sudo) for this to work:
+
+    $ ./create-container-rootfs.sh foobar
+	$ ./contain-user-host ./foobar /bin/bash -l
+
+The following are equivalent:
+
+	$ ./contain-user-host ./foobar /bin/bash -l
+    $ ./contain-interactive ./foobar
+
+The following are equivalent way of running the container's init sequence
+in the background:
+
+	$ nohup ./contain-user-host -c ./foobar /bin/sh /etc/init.d/rcS &
+    $ ./contain-background-daemon ./foobar
+
 
 ### create-static-busybox
 

@@ -1,24 +1,26 @@
-PREFIX =
+PREFIX = /usr/local/
 BINDIR = ${PREFIX}/bin
-DESTDIR =
 
 CC = gcc
 CFLAGS = -g -std=gnu99 -Os -Wall -Wextra
 
 BINARIES = list-containers
+SCRIPTS = \
+	contain-background-daemon \
+	contain-host \
+	contain-user-host \
+	contain-interactive
 
 all: ${BINARIES}
 
 list-containers: list-containers.o util.o
 
 clean:
-	rm -f -- ${BINARIES} ${SUIDROOT} tags *.o
+	rm -f -- ${BINARIES} *.o
 
 install: ${BINARIES} ${SUIDROOT}
-	mkdir -p ${DESTDIR}${BINDIR}
-	install -s ${BINARIES} ${DESTDIR}${BINDIR}
+	mkdir -p ${BINDIR}
+	install -s ${BINARIES} ${BINDIR}
+	install ${SCRIPTS} ${BINDIR}
 
-tags:
-	ctags -R
-
-.PHONY: all clean install tags
+.PHONY: all clean install

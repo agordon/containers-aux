@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/containers-aux
+
+# This script runs a container's init script
+# as a background process.
+#
+# Typical usage:
+#    create-container-rootfs.sh ./FOOBAR
+#
+# (then configure something in ./FOOBAR/etc/init.d/rcS - the processes
+#  to start inside the container as daemons)
+#
+#    contain-background-daemon ./FOOBAR
+#
+
+die()
+{
+    BASE=$(basename "$0")
+    echo "$BASE: error: $@" >&2
+    exit 1
+}
+
+##
+## Check the parameter: a valid pre-configured Root-Filesystem directory.
+##
+test -z "$1" \
+    && die "missing container root-filesystem directory " \
+           "(as created by 'create-container-rootfs.sh')"
+rootfs="$1"
+test -d "$rootfs" \
+    || die "'$rootfs' is not a valid directory"
+test -x "$rootfs/bin/bash" \
+    || die "'$rootfs' is not a valid container rootfs directory " \
+           "( $rootfs/bin/bash does not exist or not executable )"
+
+##
+## Find the start-up script
+##
+script=$(which contain-user-host 2>/dev/null)
+if test -z "$script" ; then
+    # try the same local directory as this script
+    dir=$(dirname "$0")
+    test -e "$dir/contain-user-host" \
+	&& script="$dir/contain-user-host"
+fi
+test -z "$script" \
+    && die "can't find contain-user-host script in PATH or in local directory"
+
+##
+## Run the container's init sequence, and fork into the background.
+##
+## NOTE:
+## This is a poorman's adhoc subsitute for proper daemonization.
+## In a production system, use the system's native daemon mechanism.
+nohup "$script" -c "$rootfs" /bin/sh /etc/init.d/rcS &

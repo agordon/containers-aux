@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/containers-aux
+#
+# This script wraps 'contain' progarm and adds automatic
+# bind-mounting of the host's 'lib' directories
+# (as created with 'create-contained-rootfs.sh')
+# and add user-namespace mapping for lxc_root/lxc_user
+# (as created with 'setup-user-mapping.sh').
+
+die()
+{
+    BASE=$(basename "$0")
+    echo "$BASE: error: $@" >&2
+    exit 1
+}
+
+# Directories from the host, to bind inside the container
+DIRLIST="
+/lib
+/lib32
+/lib64
+/usr/lib
+/usr/lib32
+/usr/lib64
+/usr/libexec
+/usr/share
+/usr/local/lib
+/usr/local/lib32
+/usr/local/lib64
+/usr/local/libexec
+/usr/local/share
+"
+
+# create the ephemeral directories (will be auto-populated by 'contain')
+cmd="mkdir -p ./proc ./sys ./dev ;"
+
+# bind-mount the host directories (if they exist on the host)
+for i in $DIRLIST
+do
+    test -d "$i" || continue
+    cmd="$cmd mkdir -p ./$i ; mount --bind '$i' '.$i' ;"
+done
+
+# User ID Mapping
+ROOT_NAME=lxc_root
+USER_NAME=lxc_user
+
+mapping_error()
+{
+    t="$1"
+    u="$2"
+    die "failed get $t of user '$u': did you run 'setup-user-mapping.sh' ?"
+}
+
+ROOT_UID=$(id -u "$ROOT_NAME") || mapping_error uid '$ROOT_NAME'
+USER_UID=$(id -u "$USER_NAME") || mapping_error uid '$USER_NAME'
+ROOT_GID=$(id -g "$ROOT_NAME") || mapping_error gid '$ROOT_NAME'
+USER_GID=$(id -g "$USER_NAME") || mapping_error gid '$USER_NAME'
+
+# Username mapping parameters for 'contain' -u/-g options
+user_mapping="0:$ROOT_UID:1,1000:$USER_UID:1"
+group_mapping="0:$ROOT_GID:1,1000:$USER_GID:1"
+
+contain \
+	-i "$cmd" \
+	-u "$user_mapping" \
+	-g "$group_mapping" \
+	"$@"

@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/containers-aux
+
+# This script runs a container with a root login interactive shell.
+# Typical usage:
+#
+#    $ create-container-rootfs.sh ./FOOBAR
+#    $ contain-interactive ./FOOBAR
+#    root@host /#
+#
+# will result in a 'root' login shell inside the container.
+
+die()
+{
+    BASE=$(basename "$0")
+    echo "$BASE: error: $@" >&2
+    exit 1
+}
+
+##
+## Check the parameter: a valid pre-configured Root-Filesystem directory.
+##
+test -z "$1" \
+    && die "missing container root-filesystem directory " \
+           "(as created by 'create-container-rootfs.sh')"
+rootfs="$1"
+test -d "$rootfs" \
+    || die "'$rootfs' is not a valid directory"
+test -x "$rootfs/bin/bash" \
+    || die "'$rootfs' is not a valid container rootfs directory " \
+           "( $rootfs/bin/bash does not exist or not executable )"
+
+##
+## Find the start-up script
+##
+script=$(which contain-user-host 2>/dev/null)
+if test -z "$script" ; then
+    # try the same local directory as this script
+    dir=$(dirname "$0")
+    test -e "$dir/contain-user-host" \
+	&& script="$dir/contain-user-host"
+fi
+test -z "$script" \
+    && die "can't find contain-user-host script in PATH or in local directory"
+
+##
+## Run the container interactively (with a root login shell)
+##
+exec "$script" "$rootfs" /bin/bash -l
