@@ -3,7 +3,16 @@
 coreutils/
 file/
 busybox/
+p7zip/
 
 # compiled programs
 *.o
 list-containers
+
+# tmp files
+*~
+.*.swp
+.nohup
+
+# auto-generated
+README.html
