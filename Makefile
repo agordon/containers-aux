@@ -9,7 +9,8 @@ SCRIPTS = \
 	contain-background-daemon \
 	contain-host \
 	contain-user-host \
-	contain-interactive
+	contain-interactive \
+	contain-helper
 
 all: ${BINARIES}
 

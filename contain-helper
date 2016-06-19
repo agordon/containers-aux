@@ -1,0 +1,168 @@
+#!/bin/sh
+
+# containers-aux  -  supporting progams for 'containers'
+# Copyright (C) 2015 Assaf Gordon (assafgordon@gmail.com)
+# License: MIT
+# https://github.com/agordon/containers-aux
+#
+# This script wraps 'contain' progarm and adds automatic
+# bind-mounting of the host's 'lib' directories
+# (as created with 'create-contained-rootfs.sh')
+# and add user-namespace mapping for lxc_root/lxc_user
+# (as created with 'setup-user-mapping.sh').
+
+die()
+{
+    BASE=$(basename "$0")
+    echo "$BASE: error: $@" >&2
+    exit 1
+}
+
+prepare_mount_host_lib_dirs()
+{
+    # Directories from the host, to bind inside the container
+    DIRLIST="
+/lib
+/lib32
+/lib64
+/usr/lib
+/usr/lib32
+/usr/lib64
+/usr/libexec
+/usr/share
+/usr/local/lib
+/usr/local/lib32
+/usr/local/lib64
+/usr/local/libexec
+/usr/local/share
+"
+
+    # create the ephemeral directories (will be auto-populated by 'contain')
+    mount_cmd="mkdir -p ./proc ./sys ./dev ;"
+
+    # bind-mount the host directories (if they exist on the host)
+    for i in $DIRLIST
+    do
+        test -d "$i" || continue
+        mount_cmd="$mount_cmd mkdir -p ./$i ; mount --bind '$i' '.$i' ;"
+    done
+}
+
+prepare_mount_host_bin_dirs()
+{
+    # Directories from the host, to bind inside the container
+    DIRLIST="/bin
+/usr/bin
+/usr/local/bin
+"
+
+    # bind-mount the host directories (if they exist on the host)
+    for i in $DIRLIST
+    do
+        test -d "$i" || continue
+        mount_cmd="$mount_cmd mkdir -p ./$i ; mount --bind '$i' '.$i' ;"
+    done
+}
+
+mapping_error()
+{
+    t="$1"
+    u="$2"
+    die "failed get $t of user '$u': did you run 'setup-user-mapping.sh' ?"
+}
+
+prepare_userns_mapping()
+{
+    # User ID Mapping
+    ROOT_NAME=lxc_root
+    USER_NAME=lxc_user
+
+    ROOT_UID=$(id -u "$ROOT_NAME") || mapping_error uid '$ROOT_NAME'
+    USER_UID=$(id -u "$USER_NAME") || mapping_error uid '$USER_NAME'
+    ROOT_GID=$(id -g "$ROOT_NAME") || mapping_error gid '$ROOT_NAME'
+    USER_GID=$(id -g "$USER_NAME") || mapping_error gid '$USER_NAME'
+
+    # Username mapping parameters for 'contain' -u/-g options
+    user_mapping="0:$ROOT_UID:1,1000:$USER_UID:1"
+    group_mapping="0:$ROOT_GID:1,1000:$USER_GID:1"
+}
+
+
+show_help_and_exit()
+{
+    BASE=$(basename "$0")
+    echo \
+"Container-helper - a wrapper around 'contain'
+
+Usage: $BASE [OPTIONS] DIR [CMD [ARGS]]
+
+DIR  = Container's root filesystem.
+CMD  = Command to run inside the container.
+ARGS = Arguments to pass to the command.
+
+Options:
+  -h   = This help screen.
+  -B   = Automatically mount host's 'bin' directories
+         (/bin , /usr/bin , /usr/local/bin).
+         Implies -D.
+  -c   = Disable console emulation in container
+         (see '-c' in contain program).
+  -D   = Automatically mount host's 'lib' directories
+         (lib/lib32/lib64/libexec/share from /, /usr, /usr/local).
+  -n   = Share the host network unprivileged in the container
+         (see '-n' in contain program).
+  -U   = Enable user-namespace mapping of lxc_root, lxc_user.
+         (default: current user mapped to 'root' inside the container)
+"
+    exit
+}
+
+##
+## Script start, parse command-line parameteres
+##
+show_help=
+verbose=
+poopoo=
+network=
+console=
+cmd=":;"
+
+# Parse parameters
+while getopts BcDnUh param
+do
+    case $param in
+        h)   show_help=1;;
+        D)   host_lib_dirs=1;;
+        B)   host_bin_dirs=1 ; host_lib_dirs=1 ;;
+        U)   map_userns=1;;
+        n)   network="-n";;
+        c)   console="-c";;
+        ?)   die "unknown/invalid command line option";;
+    esac
+done
+shift $(($OPTIND - 1))
+test -n "$show_help" && show_help_and_exit
+test $# -eq 0 && die "missing directory to use as container's rootfs"
+
+##
+## Prepare parameters
+##
+test -n "$host_lib_dirs" && prepare_mount_host_lib_dirs
+test -n "$host_bin_dirs" && prepare_mount_host_bin_dirs
+
+if test -n "$map_userns" ; then
+    prepare_userns_mapping
+    user_mapping="-u $user_mapping"
+    group_mapping="-g $group_mapping"
+fi
+
+##
+## run 'contain'
+##
+exec contain \
+    -i "$mount_cmd" \
+    $user_mapping \
+    $group_mapping \
+    $network \
+    $console \
+    "$@"
