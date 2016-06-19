@@ -101,6 +101,14 @@ user:x:1000:
 nobody:x:65534:
 EOF
 
+# Create DNS related files
+printf "127.0.0.1\tlocalhost\n" > "$DEST/etc/hosts"
+printf "hosts:  dns [!UNAVAIL=return] files" > "$DEST/etc/nsswitch.conf"
+cat<<EOF > "$DEST/etc/resolv.conf"
+#nameserver 8.8.4.4
+#nameserver 4.2.2.2
+EOF
+
 # Create bash startup scripts
 cat<<EOF > "$DEST/etc/profile"
 [ "\$PS1" ] && [ "\$BASH" ] && [ "\$BASH" != "/bin/sh" ] \
